@@ -1,0 +1,19 @@
+{
+  "name": "com.xun.unity-skills-csharp",
+  "version": "0.0.0",
+  "displayName": "Unity Skills CSharp",
+  "description": "Unity skills to operate unity assets",
+  "dependencies": {
+    "com.unity.nuget.newtonsoft-json": "3.0.2"
+  },
+  "unity": "2022.3",
+  "keywords": [
+    "unity",
+    "ai",
+    "skills",
+    "menuItem"
+  ],
+  "author": {
+    "name": "Xun"
+  }
+}

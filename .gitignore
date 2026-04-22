@@ -1,0 +1,11 @@
+/*.meta
+/~unity-skills-csharp/*.meta
+/~unity-skills-csharp/assets/*.meta
+/~unity-skills-csharp/assets/template/*.meta
+/~unity-skills-csharp/assets/template/csharp/*.meta
+/~unity-skills-csharp/references/*.meta
+/~unity-skills-csharp/scripts/*.meta
+/Editor/*.meta
+/Editor/Server/*.meta
+/Editor/Tools/*.meta
+/Tests/*.meta
