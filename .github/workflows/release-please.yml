@@ -13,5 +13,5 @@ jobs:
         with:
           release-type: node
           token: ${{ secrets.GITHUB_TOKEN }}
-          package-name: com.xun.hierarchy
+          package-name: com.xun.unity-skills-csharp
           default-branch: main
