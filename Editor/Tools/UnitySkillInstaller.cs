@@ -2,7 +2,7 @@ using System.IO;
 using UnityEditor;
 using UnityEngine;
 
-namespace UnitySkills
+namespace UnitySkillsCSharp
 {
     public static class UnitySkillInstaller
     {
@@ -33,15 +33,12 @@ namespace UnitySkills
                 return;
             }
 
-            if (Directory.Exists(dstPath))
+            if (!Directory.Exists(dstPath))
             {
-                Directory.Delete(dstPath, recursive: true);
-                Debug.Log($"{k_LogPrefix} Removed existing: {dstPath}");
+                Directory.CreateDirectory(Path.GetDirectoryName(dstPath));
+                CopyDirectory(srcPath, dstPath);
+                Debug.Log($"{k_LogPrefix} Installed to: {dstPath}");
             }
-
-            Directory.CreateDirectory(Path.GetDirectoryName(dstPath));
-            CopyDirectory(srcPath, dstPath);
-            Debug.Log($"{k_LogPrefix} Installed to: {dstPath}");
         }
 
         private static string GetPackageRoot()

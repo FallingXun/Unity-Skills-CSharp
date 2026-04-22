@@ -11,7 +11,7 @@ using UnityEditor.Compilation;
 using UnityEngine;
 using Debug = UnityEngine.Debug;
 
-namespace UnitySkills
+namespace UnitySkillsCSharp
 {
     public enum ServerStatus
     {
@@ -72,6 +72,7 @@ namespace UnitySkills
 
         private static readonly Queue<Action> m_MainThreadQueue = new Queue<Action>();
         private static readonly object m_QueueLock = new object();
+        private static readonly object m_CompileErrorsLock = new object();
 
         public static bool AutoStart
         {
@@ -96,11 +97,13 @@ namespace UnitySkills
         {
             m_Port = LoadPortFromIni();
 
-            CompilationPipeline.compilationStarted += _ => m_Status = ServerStatus.Compiling;
+            CompilationPipeline.compilationStarted += _ =>
+            {
+                m_Status = ServerStatus.Compiling;
+                m_CompileErrors = Array.Empty<string>();
+            };
+            CompilationPipeline.assemblyCompilationFinished += OnAssemblyCompilationFinished;
             CompilationPipeline.compilationFinished += OnCompilationFinished;
-
-            // compilationFinished marks CompileError; if compilation succeeded the domain
-            // reloads and beforeAssemblyReload fires — we clear the error there.
             AssemblyReloadEvents.beforeAssemblyReload += OnBeforeAssemblyReload;
 
             EditorApplication.update += ProcessQueue;
@@ -292,19 +295,45 @@ namespace UnitySkills
 
         private static void OnBeforeAssemblyReload()
         {
-            // Compilation succeeded — domain is about to reload.
-            // Stop the server cleanly; the static constructor will restart it after reload.
+            // Fallback: fires only if beforeAssemblyReload was not unsubscribed
+            // (e.g. play-mode domain reload outside of a compilation cycle).
             m_Status = ServerStatus.Idle;
             StopServer();
         }
 
+        private static void OnAssemblyCompilationFinished(string _, CompilerMessage[] messages)
+        {
+            bool hasErrors = false;
+            foreach (var msg in messages)
+                if (msg.type == CompilerMessageType.Error) { hasErrors = true; break; }
+
+            if (!hasErrors) return;
+
+            lock (m_CompileErrorsLock)
+            {
+                var errors = new List<string>(m_CompileErrors);
+                foreach (var msg in messages)
+                    if (msg.type == CompilerMessageType.Error)
+                        errors.Add(msg.message);
+                m_CompileErrors = errors.ToArray();
+            }
+        }
+
         private static void OnCompilationFinished(object context)
         {
-            // Unity 2020 provides no API to read compiler messages.
-            // Pessimistically set CompileError; if compilation actually succeeded,
-            // the domain reload that follows will trigger OnBeforeAssemblyReload (Idle)
-            // and then re-run the static constructor (StartServer).
-            m_Status = ServerStatus.CompileError;
+            if (m_CompileErrors.Length > 0)
+            {
+                m_Status = ServerStatus.CompileError;
+            }
+            else
+            {
+                // No errors — domain reload is imminent.
+                // Unsubscribe beforeAssemblyReload since we handle cleanup here.
+                // The static constructor will re-subscribe and restart after reload.
+                AssemblyReloadEvents.beforeAssemblyReload -= OnBeforeAssemblyReload;
+                m_Status = ServerStatus.Idle;
+                StopServer();
+            }
         }
 
         private static void ProcessQueue()

@@ -9,7 +9,7 @@ namespace UnitySkills
     public static class Task_{任务编号}
     {
         private const string k_TaskId   = "{任务编号}";
-        private const string k_MenuItem = "Unity Skills CSharp/" + k_TaskId + "/Execute";
+        private const string k_MenuItem = "Unity Skills CSharp/Task/" + k_TaskId + "/Execute";
 
         public static void Step_1()
         {
