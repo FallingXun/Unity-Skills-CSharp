@@ -28,7 +28,7 @@ namespace UnitySkillsCSharp
 
         public const int DefaultPort = 7800;
 
-        private const string k_MenuRoot        = "Unity Skills CSharp/Http Server";
+        private const string k_MenuRoot        = "Unity Skills CSharp/Server";
         private const string k_MenuStart       = k_MenuRoot + "/Start";
         private const string k_MenuStop        = k_MenuRoot + "/Stop";
         private const string k_MenuRestart     = k_MenuRoot + "/Restart";

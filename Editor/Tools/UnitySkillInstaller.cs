@@ -6,7 +6,9 @@ namespace UnitySkillsCSharp
 {
     public static class UnitySkillInstaller
     {
-        private const string k_MenuInstall    = "Unity Skills CSharp/Install Skill";
+        private const string k_MenuRoot      = "Unity Skills CSharp/Skills";
+        private const string k_MenuInstall   = k_MenuRoot + "/Install";
+        private const string k_MenuUpdate    = k_MenuRoot + "/Update";
         private const string k_SourceFolder   = "~unity-skills-csharp";
         private const string k_DestName       = "unity-skills-csharp";
         private const string k_SkillsDir      = ".claude/skills";
@@ -20,22 +22,7 @@ namespace UnitySkillsCSharp
         [MenuItem(k_MenuInstall)]
         public static void Install()
         {
-            string packageRoot = GetPackageRoot();
-            if (packageRoot == null)
-            {
-                Debug.LogError($"{k_LogPrefix} Could not locate package root.");
-                return;
-            }
-
-            string srcPath     = Path.Combine(packageRoot, k_SourceFolder);
-            string projectRoot = GetProjectRoot(packageRoot);
-            string dstPath     = Path.GetFullPath(Path.Combine(projectRoot, k_SkillsDir, k_DestName));
-
-            if (!Directory.Exists(srcPath))
-            {
-                Debug.LogError($"{k_LogPrefix} Source not found: {srcPath}");
-                return;
-            }
+            if (!ResolvePaths(out string srcPath, out string dstPath)) return;
 
             if (!Directory.Exists(dstPath))
             {
@@ -43,6 +30,45 @@ namespace UnitySkillsCSharp
                 CopyDirectory(srcPath, dstPath);
                 Debug.Log($"{k_LogPrefix} Installed to: {dstPath}");
             }
+        }
+
+        [MenuItem(k_MenuUpdate)]
+        public static void UpdateSkill()
+        {
+            if (!ResolvePaths(out string srcPath, out string dstPath)) return;
+
+            if (Directory.Exists(dstPath))
+            {
+                Directory.Delete(dstPath, recursive: true);
+                Debug.Log($"{k_LogPrefix} Removed existing: {dstPath}");
+            }
+
+            Directory.CreateDirectory(Path.GetDirectoryName(dstPath));
+            CopyDirectory(srcPath, dstPath);
+            Debug.Log($"{k_LogPrefix} Updated to: {dstPath}");
+        }
+
+        private static bool ResolvePaths(out string srcPath, out string dstPath)
+        {
+            srcPath = dstPath = null;
+
+            string packageRoot = GetPackageRoot();
+            if (packageRoot == null)
+            {
+                Debug.LogError($"{k_LogPrefix} Could not locate package root.");
+                return false;
+            }
+
+            srcPath = Path.Combine(packageRoot, k_SourceFolder);
+            if (!Directory.Exists(srcPath))
+            {
+                Debug.LogError($"{k_LogPrefix} Source not found: {srcPath}");
+                return false;
+            }
+
+            string projectRoot = GetProjectRoot(packageRoot);
+            dstPath = Path.GetFullPath(Path.Combine(projectRoot, k_SkillsDir, k_DestName));
+            return true;
         }
 
         private static string GetProjectRoot(string packageRoot)

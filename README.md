@@ -34,7 +34,7 @@ https://github.com/FallingXun/Unity-Skills-CSharp.git
 Unity 编译完成后，HTTP 服务器会自动启动并将 Skill 文件安装到 `.claude/skills/unity-skills-csharp/`。也可以手动触发：
 
 ```
-Unity Skills CSharp > Install Skill
+Unity Skills CSharp > Skills > Install
 ```
 
 ### 3. 安装 Python 依赖
@@ -138,7 +138,7 @@ python unity_client.py call "File/Save Project"
 
 ## 编辑器菜单
 
-`Unity Skills CSharp > Http Server`
+`Unity Skills CSharp > Server`
 
 | 菜单项 | 说明 |
 |--------|------|
@@ -147,7 +147,7 @@ python unity_client.py call "File/Save Project"
 | Restart | 重启服务器 |
 | Auto Start ✓ | 切换启动时自动开启（持久化到 `EditorPrefs`） |
 
-`Unity Skills CSharp > Install Skill` — 将 Skill 文件复制到 `.claude/skills/unity-skills-csharp/`。
+`Unity Skills CSharp > Skills > Install` — 将 Skill 文件复制到 `.claude/skills/unity-skills-csharp/`。
 
 ## 包结构
 
