@@ -6,12 +6,16 @@ namespace UnitySkillsCSharp
 {
     public static class UnitySkillInstaller
     {
-        private const string k_MenuInstall  = "Unity Skills CSharp/Install Skill";
-        private const string k_SourceFolder = "~unity-skills-csharp";
-        private const string k_DestName     = "unity-skills-csharp";
-        private const string k_SkillsDir    = ".claude/skills";
-        private const string k_ScriptName   = "UnitySkillInstaller.cs";
-        private const string k_LogPrefix    = "[UnitySkillInstaller]";
+        private const string k_MenuInstall    = "Unity Skills CSharp/Install Skill";
+        private const string k_SourceFolder   = "~unity-skills-csharp";
+        private const string k_DestName       = "unity-skills-csharp";
+        private const string k_SkillsDir      = ".claude/skills";
+        private const string k_LogPrefix      = "[UnitySkillInstaller]";
+
+        private const string k_ConfigFile     = "config.ini";
+        private const string k_ConfigAssetDir = "~unity-skills-csharp/assets";
+        private const string k_ProjectSection = "project";
+        private const string k_ProjectRootKey = "root_path";
 
         [MenuItem(k_MenuInstall)]
         public static void Install()
@@ -24,7 +28,7 @@ namespace UnitySkillsCSharp
             }
 
             string srcPath     = Path.Combine(packageRoot, k_SourceFolder);
-            string projectRoot = Path.GetDirectoryName(Application.dataPath);
+            string projectRoot = GetProjectRoot(packageRoot);
             string dstPath     = Path.GetFullPath(Path.Combine(projectRoot, k_SkillsDir, k_DestName));
 
             if (!Directory.Exists(srcPath))
@@ -41,10 +45,23 @@ namespace UnitySkillsCSharp
             }
         }
 
+        private static string GetProjectRoot(string packageRoot)
+        {
+            string configPath = Path.Combine(packageRoot, k_ConfigAssetDir, k_ConfigFile);
+            if (File.Exists(configPath))
+            {
+                string value = IniUtils.Read(configPath, k_ProjectSection, k_ProjectRootKey);
+                if (!string.IsNullOrWhiteSpace(value) && value != "\"\"" && Directory.Exists(value))
+                    return value;
+            }
+            return Path.GetDirectoryName(Application.dataPath);
+        }
+
         private static string GetPackageRoot()
         {
-            var rootPath = UnityEditor.PackageManager.PackageInfo.FindForAssembly(typeof(UnitySkillInstaller).Assembly).resolvedPath;
-            return rootPath;
+            var info = UnityEditor.PackageManager.PackageInfo.FindForAssembly(
+                typeof(UnitySkillInstaller).Assembly);
+            return info?.resolvedPath;
         }
 
         private static void CopyDirectory(string src, string dst)

@@ -360,76 +360,24 @@ namespace UnitySkillsCSharp
         private static void EnsureConfigFile()
         {
             string configPath = GetConfigPath();
-            if (!File.Exists(configPath))
-            {
-                Directory.CreateDirectory(Path.GetDirectoryName(configPath));
-                File.WriteAllText(configPath,
-                    $"[{k_ConfigSection}]\n{k_ConfigPortKey} = {DefaultPort}\n");
-            }
+            if (File.Exists(configPath)) return;
+            Directory.CreateDirectory(Path.GetDirectoryName(configPath));
+            IniUtils.Write(configPath, k_ConfigSection, k_ConfigPortKey, DefaultPort.ToString());
         }
 
         private static int LoadPortFromIni()
         {
             string configPath = GetConfigPath();
-            if (!File.Exists(configPath))
-                return DefaultPort;
-
-            string currentSection = "";
-            foreach (var line in File.ReadAllLines(configPath))
-            {
-                string trimmed = line.Trim();
-                if (string.IsNullOrEmpty(trimmed) || trimmed[0] == ';' || trimmed[0] == '#') continue;
-                if (trimmed[0] == '[' && trimmed[trimmed.Length - 1] == ']')
-                {
-                    currentSection = trimmed.Substring(1, trimmed.Length - 2).Trim().ToLowerInvariant();
-                    continue;
-                }
-                if (currentSection != k_ConfigSection) continue;
-                int eq = trimmed.IndexOf('=');
-                if (eq < 0) continue;
-                string key = trimmed.Substring(0, eq).Trim();
-                string val = trimmed.Substring(eq + 1).Trim();
-                if (key == k_ConfigPortKey && int.TryParse(val, out int port))
-                    return port;
-            }
-            return DefaultPort;
+            string value = IniUtils.Read(configPath, k_ConfigSection, k_ConfigPortKey,
+                DefaultPort.ToString());
+            return int.TryParse(value, out int port) ? port : DefaultPort;
         }
 
         private static void SavePortToIni(int port)
         {
             string configPath = GetConfigPath();
             Directory.CreateDirectory(Path.GetDirectoryName(configPath));
-
-            if (File.Exists(configPath))
-            {
-                var lines = new List<string>(File.ReadAllLines(configPath));
-                bool inSection = false, found = false;
-                for (int i = 0; i < lines.Count; i++)
-                {
-                    string trimmed = lines[i].Trim();
-                    if (trimmed.StartsWith("[") && trimmed.EndsWith("]"))
-                    {
-                        inSection = trimmed.Substring(1, trimmed.Length - 2).Trim().ToLowerInvariant() == k_ConfigSection;
-                        continue;
-                    }
-                    if (!inSection) continue;
-                    int eq = trimmed.IndexOf('=');
-                    if (eq < 0) continue;
-                    if (trimmed.Substring(0, eq).Trim() == k_ConfigPortKey)
-                    {
-                        lines[i] = $"{k_ConfigPortKey} = {port}";
-                        found = true;
-                        break;
-                    }
-                }
-                if (!found) lines.Add($"{k_ConfigPortKey} = {port}");
-                File.WriteAllText(configPath, string.Join("\n", lines) + "\n");
-            }
-            else
-            {
-                File.WriteAllText(configPath,
-                    $"[{k_ConfigSection}]\n{k_ConfigPortKey} = {port}\n");
-            }
+            IniUtils.Write(configPath, k_ConfigSection, k_ConfigPortKey, port.ToString());
         }
 
         private static void SendResponse(HttpListenerContext ctx, JObject body, int statusCode = 200)

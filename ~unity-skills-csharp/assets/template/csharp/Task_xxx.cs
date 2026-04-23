@@ -3,7 +3,7 @@ using Newtonsoft.Json;
 using UnityEditor;
 using UnityEngine;
 
-namespace UnitySkills
+namespace UnitySkillsCSharp
 {
     // Task：{任务内容}
     public static class Task_{任务编号}

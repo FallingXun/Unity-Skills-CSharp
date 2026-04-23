@@ -4,7 +4,7 @@
 ## 脚本生成规范
 ### 任务脚本
 - 创建一个 C# 任务脚本，需要按照[任务脚本模板](assets/template/csharp/Task_xxx.cs)进行。
-- 任务脚本路径为： `Assets/Unity Skills CSharp/Editor/Task_{任务编号}.cs`，任务编号为`{日期}_{3位序号}`，如：`Assets/Unity Skills CSharp/Editor/Task_20260417_001.cs`。
+- 任务脚本路径为： `Assets/Unity Skills CSharp/Editor/{日期}/Task_{任务编号}.cs`，任务编号为`{日期}_{3位序号}`，如：`Assets/Unity Skills CSharp/Editor/20260417/Task_20260417_001.cs`。
 ### 任务步骤
 - 拆分任务步骤。可按不同方式进行拆分，如：
     - 方式一：创建预制体节点结构树 → 对每个节点添加所需组件 → 为每个组件设置对应属性 → 设置根节点组件的引用关系 → ...
