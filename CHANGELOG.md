@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.2.0](https://github.com/FallingXun/Unity-Skills-CSharp/compare/v1.1.0...v1.2.0) (2026-04-23)
+
+
+### Features
+
+* 优化菜单 ([add1e70](https://github.com/FallingXun/Unity-Skills-CSharp/commit/add1e7056ae7457390531498a15deb79d3f3214f))
+* 增加技能更新 ([add1e70](https://github.com/FallingXun/Unity-Skills-CSharp/commit/add1e7056ae7457390531498a15deb79d3f3214f))
+
 ## [1.1.0](https://github.com/FallingXun/Unity-Skills-CSharp/compare/v1.0.0...v1.1.0) (2026-04-23)
 
 
