@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.3.0](https://github.com/FallingXun/Unity-Skills-CSharp/compare/v1.2.0...v1.3.0) (2026-05-07)
+
+
+### Features
+
+* 优化任务菜单和文件路径 ([a4b8b03](https://github.com/FallingXun/Unity-Skills-CSharp/commit/a4b8b034aaca0a60892a3fa210e916a6a0296ba7))
+* 新增任务删除和选中功能 ([a4b8b03](https://github.com/FallingXun/Unity-Skills-CSharp/commit/a4b8b034aaca0a60892a3fa210e916a6a0296ba7))
+
 ## [1.2.0](https://github.com/FallingXun/Unity-Skills-CSharp/compare/v1.1.0...v1.2.0) (2026-04-23)
 
 
