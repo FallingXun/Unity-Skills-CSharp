@@ -8,8 +8,11 @@ namespace UnitySkillsCSharp
     // Task：{任务内容}
     public static class Task_{任务编号}
     {
+        private const string k_Date   = "{日期}";
         private const string k_TaskId   = "{任务编号}";
-        private const string k_MenuItem = "Unity Skills CSharp/Task/" + k_TaskId + "/Execute";
+        private const string k_MenuItem_Execute = "Unity Skills CSharp/Task/" + k_Date + "/" + k_TaskId + "/Execute";
+        private const string k_MenuItem_Ping = "Unity Skills CSharp/Task/" + + k_Date + "/" + k_TaskId + "/Ping";
+        private const string k_TaskPath = "Assets/Unity Skills CSharp/Editor/Task/" + k_Date + "/Task_" + k_TaskId +".cs";
 
         public static void Step_1()
         {
@@ -26,7 +29,7 @@ namespace UnitySkillsCSharp
 
         // 按需继续添加步骤方法 Step_2, Step_3 ...
 
-        [MenuItem(k_MenuItem)]
+        [MenuItem(k_MenuItem_Execute)]
         public static void Execute()
         {
             Step_1();
@@ -44,6 +47,23 @@ namespace UnitySkillsCSharp
                 error = inner.Message,
             });
             return new Exception(msg, inner);
+        }
+
+        
+        [MenuItem(k_MenuItem_Ping)]
+        public static void Ping()
+        {
+            var task = AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(k_TaskPath);
+            if(task != null)
+            {
+                Selection.activeObject = task;
+                EditorGUIUtility.PingObject(task);
+                Debug.Log($"[{k_TaskPath}] Ping success.", task);
+            }
+            else
+            {
+                Debug.Log($"[{k_TaskPath}] Ping fail.");
+            }
         }
     }
 }
