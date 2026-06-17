@@ -51,8 +51,9 @@ Editor/Tools/UnitySkillInstaller.cs # Skill 安装器
 
 1. 加载[操作任务模板](references/unity-operating-task.md)和[Unity HTTP 通信](references/unity-http-communication.md)。
 2. 创建一个 C# 任务脚本。
-2. 拆分任务步骤。
-3. 为每个步骤编写具体操作逻辑。
-4. 触发 Unity 资源刷新，每隔 2 秒查询编译状态，等待脚本编译完成，如有错误则进行修复。
-5. 通过菜单栏 `Unity Skills CSharp/{任务编号}/Execute` 命令，执行任务。
-6. 如果执行失败，则根据失败返回的信息，重新创建新的任务和 C# 脚本，将未完成的内容整理到新的脚本中，并再次执行。
+3. 拆分任务步骤。
+4. 为每个步骤编写具体操作逻辑。
+5. 触发 Unity 资源刷新。
+6. 每隔 2 秒查询编译状态，等待脚本编译完成，如有错误则进行修复。
+7. 通过菜单栏 `Unity Skills CSharp/{任务编号}/Execute` 命令，执行任务。
+8. 如果执行失败，则根据失败返回的信息，重新创建新的任务和 C# 脚本，将未完成的内容整理到新的脚本中，并再次执行。
