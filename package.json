@@ -1,6 +1,6 @@
 {
   "name": "com.xun.unity-skills-csharp",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "displayName": "Unity Skills CSharp",
   "description": "Unity skills to operate unity assets",
   "dependencies": {
