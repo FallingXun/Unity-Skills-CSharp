@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.0](https://github.com/FallingXun/Unity-Skills-CSharp/compare/v1.3.0...v1.4.0) (2026-06-22)
+
+
+### Features
+
+* 优化skill任务执行流程 ([37c5709](https://github.com/FallingXun/Unity-Skills-CSharp/commit/37c57094c25dd7806b5657112a862119327ef66b))
+
 ## [1.3.0](https://github.com/FallingXun/Unity-Skills-CSharp/compare/v1.2.0...v1.3.0) (2026-05-07)
 
 
