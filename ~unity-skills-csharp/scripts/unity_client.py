@@ -4,7 +4,6 @@ Requires: pip install aiohttp
 """
 
 import asyncio
-import configparser
 import json
 import sys
 from pathlib import Path
@@ -13,11 +12,10 @@ from typing import Any, Optional
 import aiohttp
 
 # ---------------------------------------------------------------------------
-# Config — reads ~unity-skills-csharp/asset/unity_http_server.ini
+# Config — reads ~unity-skills-csharp/assets/config.json
 # ---------------------------------------------------------------------------
 
-_CONFIG_FILENAME = "config.ini"
-_CONFIG_SECTION  = "server"
+_CONFIG_FILENAME = "config.json"
 _DEFAULT_PORT    = 7800
 
 
@@ -25,11 +23,10 @@ def _load_port() -> int:
     config_path = Path(__file__).resolve().parent.parent / "assets" / _CONFIG_FILENAME
     if not config_path.exists():
         return _DEFAULT_PORT
-    config = configparser.ConfigParser()
-    config.read(config_path, encoding="utf-8")
     try:
-        return int(config[_CONFIG_SECTION]["port"])
-    except (KeyError, ValueError):
+        data = json.loads(config_path.read_text(encoding="utf-8"))
+        return int(data.get("port", _DEFAULT_PORT))
+    except (json.JSONDecodeError, ValueError, KeyError):
         return _DEFAULT_PORT
 
 # ---------------------------------------------------------------------------

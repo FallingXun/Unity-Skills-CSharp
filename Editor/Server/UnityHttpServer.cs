@@ -21,52 +21,13 @@ namespace UnitySkillsCSharp
         Executing,
     }
 
-    [InitializeOnLoad]
     public static class UnityHttpServer
     {
-        // -------------------------------------------------------------- constants
-
-        public const int DefaultPort = 7800;
-
-        private const string k_MenuRoot        = "Unity Skills CSharp/Server";
-        private const string k_MenuStart       = k_MenuRoot + "/Start";
-        private const string k_MenuStop        = k_MenuRoot + "/Stop";
-        private const string k_MenuRestart     = k_MenuRoot + "/Restart";
-        private const string k_MenuAutoStart   = k_MenuRoot + "/Auto Start";
-
-        private const string k_AutoStartPref   = "UnityHttpServer.AutoStart";
-        private const string k_ConfigFile      = "config.ini";
-        private const string k_ConfigSection   = "server";
-        private const string k_ConfigPortKey   = "port";
-        private const string k_ConfigSkillPath = ".claude/skills/unity-skills-csharp/assets";
-        private const string k_LogPrefix       = "[UnityHttpServer]";
-        private const string k_ThreadName      = "UnityHttpServerThread";
-        private const string k_ContentType     = "application/json; charset=utf-8";
-
-        private const string k_PathStatus      = "/status";
-        private const string k_PathCall        = "/call";
-
-        private const string k_KeySuccess      = "success";
-        private const string k_KeyError        = "error";
-        private const string k_KeyStatus       = "status";
-        private const string k_KeyPort         = "port";
-        private const string k_KeyErrors       = "errors";
-        private const string k_KeyMenuItem     = "menuItem";
-
-        private const string k_StatusIdle         = "idle";
-        private const string k_StatusCompiling    = "compiling";
-        private const string k_StatusCompileError = "compile_error";
-        private const string k_StatusExecuting    = "executing";
-        private const string k_StatusUnknown      = "unknown";
-
-        private const int    k_CallTimeoutSec  = 10;
-        private const int    k_ThreadJoinMs    = 1000;
-
         // -------------------------------------------------------------- fields
 
         private static HttpListener m_Listener;
         private static Thread m_ListenerThread;
-        private static int m_Port;
+        private static int m_CurrentPort = 7800;
         private static volatile ServerStatus m_Status = ServerStatus.Idle;
         private static volatile string[] m_CompileErrors = Array.Empty<string>();
 
@@ -74,28 +35,27 @@ namespace UnitySkillsCSharp
         private static readonly object m_QueueLock = new object();
         private static readonly object m_CompileErrorsLock = new object();
 
+        private static bool s_Initialized;
+
         public static bool AutoStart
         {
-            get => EditorPrefs.GetBool(k_AutoStartPref, true);
-            set => EditorPrefs.SetBool(k_AutoStartPref, value);
+            get => EditorPrefs.GetBool(Const.AutoStartPref, true);
+            set => EditorPrefs.SetBool(Const.AutoStartPref, value);
         }
 
-        public static int Port => m_Port;
+        public static int Port => m_CurrentPort;
 
-        public static void SetPort(int port)
+        // -------------------------------------------------------------- initialization
+
+        /// <summary>
+        /// Register compilation hooks and EditorApplication callbacks.
+        /// Called once by <see cref="Initialization"/>.
+        /// Does NOT auto-start the server.
+        /// </summary>
+        public static void Initialize()
         {
-            bool wasRunning = m_Listener != null;
-            if (wasRunning) StopServer();
-            m_Port = port;
-            SavePortToIni(port);
-            if (wasRunning) StartServer();
-        }
-
-        // -------------------------------------------------------------- lifecycle
-
-        static UnityHttpServer()
-        {
-            m_Port = LoadPortFromIni();
+            if (s_Initialized) return;
+            s_Initialized = true;
 
             CompilationPipeline.compilationStarted += _ =>
             {
@@ -108,46 +68,64 @@ namespace UnitySkillsCSharp
 
             EditorApplication.update += ProcessQueue;
             EditorApplication.quitting += Shutdown;
-
-            if (AutoStart)
-                StartServer();
         }
 
-        [MenuItem(k_MenuStart)]
-        public static void StartMenuItem()
+        /// <summary>
+        /// Set the port and start the HTTP server.
+        /// </summary>
+        public static void StartWithPort(int port)
         {
-            if (m_Listener != null) { Debug.Log($"{k_LogPrefix} Already running."); return; }
+            m_CurrentPort = port;
             StartServer();
         }
 
-        [MenuItem(k_MenuStop)]
-        public static void StopMenuItem() => StopServer();
+        /// <summary>
+        /// Stop the server if it is currently running.
+        /// </summary>
+        public static void StopIfRunning()
+        {
+            if (m_Listener != null)
+                StopServer();
+        }
 
-        [MenuItem(k_MenuRestart)]
-        public static void RestartMenuItem() { StopServer(); StartServer(); }
+        // -------------------------------------------------------------- public methods
 
-        [MenuItem(k_MenuAutoStart)]
+        public static void StartServerMenu()
+        {
+            if (m_Listener != null) { Debug.Log($"{Const.LogPrefixHttpServer} Already running."); return; }
+            StartServer();
+        }
+
+        public static void StopServerMenu() => StopServer();
+
+        public static void RestartServerMenu() { StopServer(); StartServer(); }
+
         public static void ToggleAutoStart() => AutoStart = !AutoStart;
 
-        [MenuItem(k_MenuAutoStart, true)]
-        public static bool ToggleAutoStartValidate()
+        public static bool AutoStartChecked()
         {
-            Menu.SetChecked(k_MenuAutoStart, AutoStart);
+            Menu.SetChecked(Const.MenuGroupServerAutoStart, AutoStart);
             return true;
         }
 
+        // -------------------------------------------------------------- lifecycle
+
         private static void StartServer()
         {
-            UnitySkillInstaller.Install();
-            EnsureConfigFile();
-            if (!TryBindListener())
+            if (m_CurrentPort <= 0)
             {
-                Debug.LogError($"{k_LogPrefix} Failed to start on port {Port}.");
+                Debug.LogError($"{Const.LogPrefixHttpServer} Invalid port: {m_CurrentPort}.");
                 return;
             }
 
-            Debug.Log($"{k_LogPrefix} Listening on http://localhost:{Port}/");
-            m_ListenerThread = new Thread(ListenLoop) { IsBackground = true, Name = k_ThreadName };
+            if (!TryBindListener())
+            {
+                Debug.LogError($"{Const.LogPrefixHttpServer} Failed to start on port {Port}.");
+                return;
+            }
+
+            Debug.Log($"{Const.LogPrefixHttpServer} Listening on http://localhost:{Port}/");
+            m_ListenerThread = new Thread(ListenLoop) { IsBackground = true, Name = Const.HttpServerThreadName };
             m_ListenerThread.Start();
         }
 
@@ -155,7 +133,7 @@ namespace UnitySkillsCSharp
         {
             m_Listener?.Stop();
             m_Listener = null;
-            m_ListenerThread?.Join(k_ThreadJoinMs);
+            m_ListenerThread?.Join(Const.ThreadJoinMs);
             m_ListenerThread = null;
         }
 
@@ -164,7 +142,7 @@ namespace UnitySkillsCSharp
             EditorApplication.update -= ProcessQueue;
             StopServer();
         }
-         
+
         private static bool TryBindListener()
         {
             try
@@ -212,9 +190,9 @@ namespace UnitySkillsCSharp
             {
                 switch (path)
                 {
-                    case k_PathStatus: SendResponse(ctx, HandleStatus());          break;
-                    case k_PathCall:   SendResponse(ctx, HandleCall(ctx.Request)); break;
-                    default:           SendResponse(ctx, Response(false, "endpoint not found"), 404); break;
+                    case Const.PathStatus: SendResponse(ctx, HandleStatus());          break;
+                    case Const.PathCall:   SendResponse(ctx, HandleCall(ctx.Request)); break;
+                    default:               SendResponse(ctx, Response(false, "endpoint not found"), 404); break;
                 }
             }
             catch (Exception e)
@@ -226,15 +204,15 @@ namespace UnitySkillsCSharp
         private static JObject HandleStatus()
         {
             var obj = Response(true);
-            obj[k_KeyStatus] = StatusToString(m_Status);
-            obj[k_KeyPort]   = Port;
+            obj[Const.KeyStatus] = StatusToString(m_Status);
+            obj[Const.KeyPort]   = Port;
 
             if (m_Status == ServerStatus.CompileError && m_CompileErrors.Length > 0)
             {
                 var arr = new JArray();
                 foreach (var msg in m_CompileErrors)
                     arr.Add(msg);
-                obj[k_KeyErrors] = arr;
+                obj[Const.KeyErrors] = arr;
             }
 
             return obj;
@@ -250,9 +228,9 @@ namespace UnitySkillsCSharp
             try { payload = JObject.Parse(body); }
             catch { return Response(false, "request body is not valid JSON"); }
 
-            string menuItem = payload[k_KeyMenuItem]?.Value<string>();
+            string menuItem = payload[Const.KeyMenuItem]?.Value<string>();
             if (string.IsNullOrEmpty(menuItem))
-                return Response(false, $"missing '{k_KeyMenuItem}' in request body");
+                return Response(false, $"missing '{Const.KeyMenuItem}' in request body");
 
             var tcs = new TaskCompletionSource<bool>();
 
@@ -278,8 +256,8 @@ namespace UnitySkillsCSharp
 
             try
             {
-                if (!tcs.Task.Wait(TimeSpan.FromSeconds(k_CallTimeoutSec)))
-                    return Response(false, $"timeout: main thread did not respond within {k_CallTimeoutSec}s");
+                if (!tcs.Task.Wait(TimeSpan.FromSeconds(Const.CallTimeoutSec)))
+                    return Response(false, $"timeout: main thread did not respond within {Const.CallTimeoutSec}s");
             }
             catch (AggregateException ae)
             {
@@ -287,7 +265,7 @@ namespace UnitySkillsCSharp
             }
 
             var result = Response(tcs.Task.Result);
-            result[k_KeyMenuItem] = menuItem;
+            result[Const.KeyMenuItem] = menuItem;
             return result;
         }
 
@@ -329,7 +307,7 @@ namespace UnitySkillsCSharp
             {
                 // No errors — domain reload is imminent.
                 // Unsubscribe beforeAssemblyReload since we handle cleanup here.
-                // The static constructor will re-subscribe and restart after reload.
+                // The Initialize() will re-subscribe and restart after reload.
                 AssemblyReloadEvents.beforeAssemblyReload -= OnBeforeAssemblyReload;
                 m_Status = ServerStatus.Idle;
                 StopServer();
@@ -350,41 +328,11 @@ namespace UnitySkillsCSharp
 
         // -------------------------------------------------------------- helpers
 
-        private static string GetConfigPath()
-        {
-            return Path.Combine(
-                Path.GetDirectoryName(Application.dataPath),
-                k_ConfigSkillPath, k_ConfigFile);
-        }
-
-        private static void EnsureConfigFile()
-        {
-            string configPath = GetConfigPath();
-            if (File.Exists(configPath)) return;
-            Directory.CreateDirectory(Path.GetDirectoryName(configPath));
-            IniUtils.Write(configPath, k_ConfigSection, k_ConfigPortKey, DefaultPort.ToString());
-        }
-
-        private static int LoadPortFromIni()
-        {
-            string configPath = GetConfigPath();
-            string value = IniUtils.Read(configPath, k_ConfigSection, k_ConfigPortKey,
-                DefaultPort.ToString());
-            return int.TryParse(value, out int port) ? port : DefaultPort;
-        }
-
-        private static void SavePortToIni(int port)
-        {
-            string configPath = GetConfigPath();
-            Directory.CreateDirectory(Path.GetDirectoryName(configPath));
-            IniUtils.Write(configPath, k_ConfigSection, k_ConfigPortKey, port.ToString());
-        }
-
         private static void SendResponse(HttpListenerContext ctx, JObject body, int statusCode = 200)
         {
             var res = ctx.Response;
             res.StatusCode      = statusCode;
-            res.ContentType     = k_ContentType;
+            res.ContentType     = Const.ContentTypeJson;
             byte[] buf          = Encoding.UTF8.GetBytes(body.ToString(Newtonsoft.Json.Formatting.None));
             res.ContentLength64 = buf.Length;
             res.OutputStream.Write(buf, 0, buf.Length);
@@ -395,18 +343,18 @@ namespace UnitySkillsCSharp
         {
             switch (status)
             {
-                case ServerStatus.Idle:         return k_StatusIdle;
-                case ServerStatus.Compiling:    return k_StatusCompiling;
-                case ServerStatus.CompileError: return k_StatusCompileError;
-                case ServerStatus.Executing:    return k_StatusExecuting;
-                default:                        return k_StatusUnknown;
+                case ServerStatus.Idle:         return Const.StatusIdle;
+                case ServerStatus.Compiling:    return Const.StatusCompiling;
+                case ServerStatus.CompileError: return Const.StatusCompileError;
+                case ServerStatus.Executing:    return Const.StatusExecuting;
+                default:                        return Const.StatusUnknown;
             }
         }
 
         private static JObject Response(bool success, string error = null)
         {
-            var obj = new JObject { [k_KeySuccess] = success };
-            if (error != null) obj[k_KeyError] = error;
+            var obj = new JObject { [Const.KeySuccess] = success };
+            if (error != null) obj[Const.KeyError] = error;
             return obj;
         }
     }

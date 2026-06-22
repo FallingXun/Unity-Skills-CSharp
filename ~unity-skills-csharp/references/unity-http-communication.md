@@ -8,17 +8,17 @@
 pip install aiohttp
 ```
 
-端口配置共享 `assets/config.ini`（安装后位于 `.claude/skills/unity-skills-csharp/assets/config.ini`）：
+端口配置共享 `assets/config.json`（安装后位于 `.claude/skills/unity-skills-csharp/assets/config.json`）：
 
-```ini
-[server]
-port = 7800
+```json
+{"port": 7800, "claudeDir": "/path/to/.claude"}
 ```
 
-通过代码修改端口（同步写回 INI 并自动重启）：
+通过 ConfigWindow 修改端口（自动重启 HTTP 服务）：
 
 ```csharp
-UnitySkills.UnityHttpServer.SetPort(8080);
+// 打开设置窗口：Window/Unity Skills CSharp/Config
+// 修改端口后点击 Save，自动同步到 .claude
 ```
 
 ## HTTP API
@@ -107,4 +107,4 @@ python unity_client.py call "File/Save Project"
 
 - 执行 MenuItem 前建议先调用 `wait_for_idle()` 等待编译完成
 - `/call` 接口在主线程执行，超时时间 **10 秒**
-- `AutoStart` 持久化在 `EditorPrefs`；端口配置持久化在 `assets/config.ini`
+- `AutoStart` 持久化在 `EditorPrefs`；端口配置持久化在 `Assets/Unity Skills CSharp/Editor/Config/config.json`

@@ -10,8 +10,8 @@ namespace UnitySkillsCSharp
     {
         private const string k_Date   = "{日期}";
         private const string k_TaskId   = "{任务编号}";
-        private const string k_MenuItem_Execute = "Unity Skills CSharp/Task/" + k_Date + "/" + k_TaskId + "/Execute";
-        private const string k_MenuItem_Ping = "Unity Skills CSharp/Task/" + + k_Date + "/" + k_TaskId + "/Ping";
+        private const string k_MenuItem_Execute = "Unity Skills CSharp/Task" + "/" + k_Date + "/" + k_TaskId + "/Execute";
+        private const string k_MenuItem_Ping = "Unity Skills CSharp/Task" + "/" + k_Date + "/" + k_TaskId + "/Ping";
         private const string k_TaskPath = "Assets/Unity Skills CSharp/Editor/Task/" + k_Date + "/Task_" + k_TaskId +".cs";
 
         public static void Step_1()

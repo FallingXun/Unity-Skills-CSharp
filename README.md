@@ -7,7 +7,7 @@
 - Unity 2022.3+
 - [Newtonsoft.Json](https://docs.unity3d.com/Packages/com.unity.nuget.newtonsoft-json@latest)（`com.unity.nuget.newtonsoft-json`）
 - Python 3.9+，需安装 `aiohttp`（`pip install aiohttp`）
-- Windows（INI 读写依赖 `kernel32.dll`）
+- Windows（HTTP 服务基于 `HttpListener`）
 
 ## 安装
 
@@ -31,11 +31,7 @@ https://github.com/FallingXun/Unity-Skills-CSharp.git
 
 ### 2. 安装 Claude Code Skill
 
-Unity 编译完成后，HTTP 服务器会自动启动并将 Skill 文件安装到 `.claude/skills/unity-skills-csharp/`。也可以手动触发：
-
-```
-Unity Skills CSharp > Skills > Install
-```
+Unity 编译完成后，会自动将 Skill 文件安装到 `.claude/skills/unity-skills-csharp/`。也可以手动触发菜单 `Unity Skills CSharp > Install`。
 
 ### 3. 安装 Python 依赖
 
@@ -45,30 +41,21 @@ pip install aiohttp
 
 ## 配置
 
-共享配置文件位于：
+首次启动时若未检测到有效配置，会自动打开配置窗口（`Unity Skills CSharp > Settings`），设置：
 
-```
-.claude/skills/unity-skills-csharp/assets/config.ini
-```
+- **Port** — HTTP 服务器监听端口（默认 7800）
+- **.claude Directory** — `.claude` 目录路径（如 `D:/Projects/MyGame/.claude`）
 
-```ini
-[server]
-port = 7800
+点击 **Save** 保存配置，配置将写入 `Assets/Unity Skills CSharp/Editor/Config/config.json` 并自动同步到 `.claude/skills/unity-skills-csharp/assets/config.json`。
 
-[project]
-root_path = ""
+```json
+{ "port": 7800, "claudeDir": "/absolute/path/.claude" }
 ```
 
-| Section | Key | 默认值 | 说明 |
-|---------|-----|--------|------|
-| `[server]` | `port` | `7800` | HTTP 服务器监听端口 |
-| `[project]` | `root_path` | *(空)* | Skill 安装目标路径，为空时使用 Unity 工程根目录 |
-
-通过代码修改端口（同步写回 INI 并自动重启服务器）：
-
-```csharp
-UnitySkillsCSharp.UnityHttpServer.SetPort(8080);
-```
+| 字段 | 默认值 | 说明 |
+|------|--------|------|
+| `port` | `7800` | HTTP 服务器监听端口 |
+| `claudeDir` | *(空)* | `.claude` 目录的绝对路径，用于 Skill 安装和配置同步 |
 
 ## HTTP API
 
@@ -138,39 +125,46 @@ python unity_client.py call "File/Save Project"
 
 ## 编辑器菜单
 
-`Unity Skills CSharp > Server`
+所有菜单项统一在 `Unity Skills CSharp` 下：
 
 | 菜单项 | 说明 |
 |--------|------|
+| Settings | 打开配置窗口，设置端口和 .claude 目录 |
+| Install | 安装 Skill 文件到 `.claude/skills/unity-skills-csharp/` |
+| Update | 更新 Skill 文件，并同步 config.json 到 .claude |
 | Start | 手动启动 HTTP 服务器 |
 | Stop | 停止服务器 |
 | Restart | 重启服务器 |
 | Auto Start ✓ | 切换启动时自动开启（持久化到 `EditorPrefs`） |
-
-`Unity Skills CSharp > Skills > Install` — 将 Skill 文件复制到 `.claude/skills/unity-skills-csharp/`。
+| Clear | 清理任务文件夹 |
 
 ## 包结构
 
 ```
 Editor/
+  Core/
+    Const.cs                    # 全局常量定义
+    Initialization.cs           # [InitializeOnLoad] 入口，所有 MenuItem 分组管理
   Server/
-    UnityHttpServer.cs       # HTTP 服务端（[InitializeOnLoad]）
+    UnityHttpServer.cs          # HTTP 服务端
   Tools/
-    UnitySkillInstaller.cs   # 将 Skill 文件安装到 .claude/skills/
-  Utils/
-    IniUtils.cs              # kernel32 INI 读写封装
+    SkillHelper.cs              # 将 Skill 文件安装到 .claude/skills/
+    TaskHelper.cs               # 清理任务文件夹
+    ConfigHelper.cs             # JSON 配置读写与同步
+  Windows/
+    ConfigWindow.cs             # 配置编辑器窗口
   UnitySkillsCSharp.Editor.asmdef
-~unity-skills-csharp/        # Claude Code Skill 资源包
+~unity-skills-csharp/           # Claude Code Skill 资源包
   SKILL.md
   assets/
-    config.ini               # 端口与工程路径配置
+    config.json                 # 端口与 .claude 路径配置（同步副本）
     template/csharp/
-      Task_xxx.cs            # 任务脚本模板
+      Task_xxx.cs               # 任务脚本模板
   references/
     unity-http-communication.md
     unity-operating-task.md
   scripts/
-    unity_client.py          # Python 异步客户端
+    unity_client.py             # Python 异步客户端（读取 config.json）
 ```
 
 ## License
